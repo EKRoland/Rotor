@@ -25,7 +25,7 @@ see `main_examples.py`
 *Python version used : 3.10.10*
 
 To install the dependences needed:  
-`pip install -r requirement.txt`
+`pip install -r requirements.txt`
 
 It will install the following modules:
 * networkx
