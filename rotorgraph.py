@@ -200,7 +200,7 @@ class RotorGraph(nx.MultiDiGraph):
         else: return None
 
 
-    def set_rotor_order(self, new_order: dict[Node, list(Edge)]):
+    def set_rotor_order(self, new_order: dict[Node, list[Edge]]):
         """
         Define the rotor order to consider.
         The new order will override the old one of the given nodes.
