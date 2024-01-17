@@ -107,9 +107,9 @@ class ParticleConfig(vector.Vector):
             - k: the number of particles (default: one particle)
         No output
         """
-        if node in self.configuration:
+        for node in self.configuration:
             self.configuration[node] -= k
-        else: self.configuration[node] = -k
+        
 
     def set_particles(self, node:Node, k:int=1):
         """

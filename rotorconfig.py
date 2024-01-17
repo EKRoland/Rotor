@@ -26,7 +26,7 @@ class RotorConfig(object):
         elif configuration is None:
             self.configuration = dict()
         else:
-            raise TypeError("configuration has to be a dict, RotorGraph or nothing")
+            raise TypeError("configuration has to be a dict, RotorGraph, Vector or nothing")
 
     def __str__(self):
         """dictionnary method"""

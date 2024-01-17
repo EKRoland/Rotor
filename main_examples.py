@@ -6,6 +6,9 @@ from rotorgraph import RotorGraph, display_path, all_config_from_recurrent, disp
 from particleconfig import ParticleConfig
 from matrices import Matrix
 
+
+
+
 def particle_configuration():
     """
     An example of particle configuration manipulations
@@ -48,7 +51,7 @@ def rotor_configuration():
     rho = RotorConfig(G)
     # visual representation of the simple path 
     display_path(rho)
-
+    ##print(rho)
     edge = (1, 0, 0)
 
     # set the edge (1, 0, 0) in the rotor config for the node 1
@@ -57,11 +60,15 @@ def rotor_configuration():
 
     # translate the rotor config into a vector
     vec = Vector(rho)
+    ##print(vec)
+
     # set the next edge according to the rotor order 
     vec = vec - edge + G.turn(edge)
+    ##print(vec)
 
     # tranlaste the vector into a rotor config 
     rho2 = RotorConfig(vec)
+    ##print(rho2)
 
     display_path(rho2)
 
@@ -71,7 +78,7 @@ def simple_path_graph():
     Example of legal routing and complete routing
     """
     # creation of the simple path graph with 7 nodes (n = number of nodes that are not considered as sink)
-    G = RotorGraph.simple_path(n=1, x=2, y=2)
+    G = RotorGraph.simple_path(n=7, x=2, y=2)
     # create the rotor config (dict: node -> edge (tuple))
     rho = RotorConfig(G)
     G.check_rotor_config(rho)
@@ -87,17 +94,25 @@ def simple_path_graph():
     sigma, rho, info = G.legal_routing(sigma, rho)
     display_path(rho, sigma)
 
+    # display informations about the routing
+    print("info", info)
+    
+
     # equivalent to sigma.set_particles(3, -4)
     # set 4 antiparticles on the node 3
-    sigma[3] = -4
-    display_path(rho, sigma)
+    ##sigma[3] = -4
+    ##display_path(rho, sigma)
 
-    # complete routing : first routes particles, then routes antiparticles
+    # complete routing : first routes particles, then routes antiparticles to the sinks
     sigma, rho, info = G.complete_routing(sigma, rho)
     
     # display informations about the routing
-    print(info)
-    display_path(rho, sigma)
+    ##print("info", info)
+    ##display_path(rho, sigma)
+
+    p=G.enum_configurations()
+    print(list(p))
+    
 
 
 def laplacian_matrices():
@@ -120,12 +135,15 @@ def smith_normal_form():
     print(matrix)
     # compute the snf problem
     prob = matrix.snf_problem()
+
     # J is the diagonalized matrix
     print(prob.J)
     # S and T are complementary unimodular matrices
     print(prob.S)
     print(prob.T)
+    
     print(prob.S * prob.A * prob.T)
+    #A==matrix
 
 def acyclic_recurrents():
     """
@@ -148,6 +166,8 @@ def acyclic_recurrents():
     #  for all acyclic configuration, gives the corresponding recurrent configuration
     rec = G.recurrent_from_acyclic(acy)
 
+    #print(rec)
+
     # give the tuple (rec, acy) for each class
     rec_acy = G.recurrent_and_acyclic(acy)
     for tupl in rec_acy: print(tupl)
@@ -165,5 +185,19 @@ if __name__ == "__main__":
     _, info = G.route_one_particle(2, rho)
     for rho, sigma in info.configuration_history:
         display_path(rho, sigma)
-    """    
+    """   
 
+    """
+    #Visual plot of a graph
+
+    
+    import matplotlib.pyplot as plt
+    #G=RotorGraph.grid(3, 3, "center")
+    G=RotorGraph.random_graph(5,5)
+
+    # Tracer le graphe
+    pos = nx.spring_layout(G)  # Choisir un agencement pour les nœuds
+    nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=700, node_color='skyblue', font_color='black', font_size=10)
+
+    # Afficher le tracé
+    plt.show()"""

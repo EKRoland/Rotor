@@ -13,10 +13,10 @@ class RotorGraph(nx.MultiDiGraph):
     def __init__(self, incoming_graph_data=None, multigraph_input=None, **attr):
         """
         A class which represent a Multi Directed Rotor Graph.
-        Inherit all mathods from MultiDiGraph of the networkx module
+        Inherit all methods from MultiDiGraph of the networkx module
         """
         self._sinks = set() # active sinks (setted manually)
-        self.sinks = set() # all sinks (manually and automatically
+        self.sinks = set() # all sinks (manually and automatically)
         self.rotor_order = dict() # {node: list[edge]}
         self.edge_index = dict() # {edge: index in the rotor order list}
         nx.MultiDiGraph.__init__(self, incoming_graph_data, multigraph_input, **attr)
@@ -69,17 +69,16 @@ class RotorGraph(nx.MultiDiGraph):
         sinks = sinks.lower()
         if sinks in {"border", "borders"}:
             for i in range(n):
-                graph.set_sink()
+                graph.set_sink(i*n, i*n + m-1 )  # graph.set_sink()
             for i in range(m):
-                graph.set_sink(i, i*m, i*m + m-1, (n-1)*m+i)
-
+                graph.set_sink(i, (n-1)*m+i) #graph.set_sink(i, i*m, i*m + m-1, (n-1)*m+i)
         elif sinks in {"corner", "corners"}:
-            graph.set_sink(0, m-1, n*m, m*(n-1), m*n-1)
+            graph.set_sink(0, m-1, m*(n-1), m*n-1) #graph.set_sink(0, m-1, n*m, m*(n-1), m*n-1)
         elif sinks in {"center"}:
             graph.set_sink((n*m) // 2)
 
         return graph
-
+    
     def random_graph(min_nb_nodes:int=5, max_nb_nodes:int=15) -> RotorGraph:
         """
         Create a random connected rotor graph with a random number of sinks.
@@ -546,7 +545,6 @@ class RotorGraph(nx.MultiDiGraph):
 
         return particle_config, rotor_config, info
 
-
     def laplacian_matrix(self, sinks: set=None) -> dict[Node, dict[Node, int]]:
         """
         Create the laplacian matrix of the graph
@@ -630,7 +628,7 @@ class RotorGraph(nx.MultiDiGraph):
 
         return particle_config, rotor_config
 
-    def enum_configurations(self, sinks:set=None) -> list[RotorConfig]:
+    def enum_configurations(self, sinks:set=None) -> list[RotorConfig]: 
         """
         Gives a list of all the rotor configuration of the graph
         Input:
@@ -641,7 +639,7 @@ class RotorGraph(nx.MultiDiGraph):
         if sinks == None:
             if self.sinks:
                 sinks = self.sinks
-            else: raise Exception("No sink in the graph: cannot find an acyclic configuration.")
+            #else: raise Exception("No sink in the graph: cannot find an acyclic configuration.") 
 
         nodes = [node for node in self.rotor_order.keys() if node not in sinks]
         i = 0 # index of the node where to chose the next edge
@@ -668,7 +666,7 @@ class RotorGraph(nx.MultiDiGraph):
                     rotor_configuration[i] = 0
                     i -= 1
                     rotor_configuration[i] += 1
-        # return config_list
+        # return config_list         
 
 
     def enum_acyclic_configurations(self, sinks:set=None) -> list[RotorConfig]:
@@ -724,14 +722,15 @@ class RotorGraph(nx.MultiDiGraph):
         return acyclic_config
 
 
-    def recurrent_from_acyclic(self, list_acyclic:list[RotorConfig]) -> list[tuple[RotorConfig, RotorConfig]]:
+    def recurrent_from_acyclic(self, list_acyclic:list[RotorConfig]) -> list[RotorConfig]:
+    #list[tuple[RotorConfig, RotorConfig]]:
         """
         For all acyclic configuration, gives the corresponding recurrent configuration in the class
         Input:
             - list_acyclic: the list of all acyclic configuration of the graph
         Output:
-            - list of tuples (recurrent configuration, acyclic configuration)
-        """
+            - list of recurrent configuration
+        """  
         rec = list()
         for config in list_acyclic:
             rec.append(self.turn_all(config))
@@ -789,9 +788,9 @@ def display_path(rotor_config: RotorConfig, particle_config: ParticleConfig=None
     """
     Give a graphical representation in the terminal of a simple path graph configuration.
     Examples,
-    if ParticleConfig given:
-        x<- x<- x - x
     if no ParticleConfig given:
+        x<- x<- x - x
+    if ParticleConfig given:
         3 - 5<->2 - 0
     Input:
         - rotor_config: the rotor configuration of the graph
