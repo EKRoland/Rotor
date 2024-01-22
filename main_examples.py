@@ -56,21 +56,22 @@ def rotor_configuration():
 
     # set the edge (1, 0, 0) in the rotor config for the node 1
     rho[1] = edge
-    display_path(rho)
+    #display_path(rho)
 
     # translate the rotor config into a vector
     vec = Vector(rho)
-    ##print(vec)
+    print(vec)
 
     # set the next edge according to the rotor order 
     vec = vec - edge + G.turn(edge)
-    ##print(vec)
+    print(vec)
+
 
     # tranlaste the vector into a rotor config 
     rho2 = RotorConfig(vec)
     ##print(rho2)
 
-    display_path(rho2)
+    #display_path(rho2)
 
 
 def simple_path_graph():
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     #particle_configuration()
     #rotor_configuration()
     #simple_path_graph()
-    smith_normal_form()
+    #smith_normal_form()
     """
     G = RotorGraph.simple_path()
     rho = RotorConfig(G)
@@ -187,17 +188,99 @@ if __name__ == "__main__":
         display_path(rho, sigma)
     """   
 
-    """
-    #Visual plot of a graph
-
+    
+   
     
     import matplotlib.pyplot as plt
+    
+
+
+
+    graph = RotorGraph()
+    for i in range(3): graph.add_node(i)
+    
+    
+    graph.add_edge(1,0)
+    graph.add_edge(1,0)
+
+   
+    graph.add_edge(2,1)
+    graph.add_edge(2,1)
+
+    graph.add_edge(1,2)
+    graph.add_edge(2,0)
+
+    graph.set_sink(0)
+
+
+    G=graph
+    #G = RotorGraph.simple_path(n=7, x=2, y=2)
     #G=RotorGraph.grid(3, 3, "center")
-    G=RotorGraph.random_graph(5,5)
+    #G=RotorGraph.random_graph(5,5)
+    
+    span=G.spanning_vector() 
+    print(span)
 
-    # Tracer le graphe
-    pos = nx.spring_layout(G)  # Choisir un agencement pour les nœuds
-    nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=700, node_color='skyblue', font_color='black', font_size=10)
+    
 
-    # Afficher le tracé
-    plt.show()"""
+    base= G.cycle_basis()
+    print(base)
+    print(len(base))
+    print(len(span))
+
+    cpm= G.cycle_push_matrix({})
+    rcpm= G.reduced_cycle_push_matrix()
+    print(cpm)
+    print(rcpm)
+
+    
+
+    #span= {(1, 0, 1): 1, (1, 2, 0): 1, (2, 3, 0): 1, (3, 4, 1): 0, (4, 5, 0): 1, (5, 6, 0): -2, (6, 7, 0): 1, (7, 8, 0): 1}
+    #allpush = G.linear_turn_vector(span) 
+
+    
+    #print(allpush)
+    
+    '''
+    undirected_graph = G.to_undirected()
+    # Calculating the minimum spanning tree using Kruskal's algorithm
+    undirected_mst = nx.minimum_spanning_tree(undirected_graph)
+    #The oriented spanning tree
+    directed_spanning_tree=RotorGraph()
+
+        
+    for edge in undirected_mst.edges:
+        if G.has_edge(edge[0],edge[1]):
+            directed_spanning_tree.add_edge(edge[0],edge[1])
+        else:
+            directed_spanning_tree.add_edge(edge[1],edge[0])
+
+    #print(nx.is_subgraph(directed_spanning_tree, G))
+    if set(directed_spanning_tree.nodes()).issubset(set(G.nodes())) and set(directed_spanning_tree.edges()).issubset(set(G.edges())):
+        print("subgraph est un sous-graphe de G.")
+    else:
+        print("subgraph n'est pas un sous-graphe de G.")
+
+    print(directed_spanning_tree.edges)
+
+
+    spannig_vector= Vector()
+    for edge in directed_spanning_tree.edges:
+        spannig_vector += edge
+    print(spannig_vector)
+
+    '''
+
+
+
+
+
+    
+
+
+
+   
+    '''
+    
+    '''
+    #rotor_configuration()

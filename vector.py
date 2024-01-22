@@ -1,3 +1,4 @@
+import networkx as nx
 from types_definition import *
 
 class Vector:
@@ -389,3 +390,41 @@ class Vector:
     def __len__(self) -> int:
         """dictionnary method"""
         return len(self.configuration)
+    
+    def find_cycle(self)-> Vector:
+        """
+        Find cycles in a sum of arcs 
+        Input:
+            - self: vector which is a sum of arc (edge: int)
+        Output:
+            - Vector of edges which form an undirected cycle
+
+        """
+
+        #Creation of a multigraph assiociated to the vector
+        G = nx.MultiGraph()
+        for edge, count in self.configuration.items():
+            if count != 0:
+                G.add_edge(edge[0], edge[1])
+        #list of cycles
+        cycles = list(nx.simple_cycles(G))
+
+        #list of edges in the first cycle
+        cycle = cycles[0]
+        cycle_edges = []
+        cycle_edges.extend([(cycle[i], cycle[i+1]) for i in range(len(cycle)-1)])
+        cycle_edges.append((cycle[-1], cycle[0]))  # Add of the last arc of the cycle
+        
+
+        #give the edges of the vector which form the cycle with thier orientation
+        cycle_edges_vector = Vector()
+        for edge, count in self.configuration.items():
+            if (edge[0],edge[1]) in cycle_edges:
+                cycle_edges_vector += (edge[0], edge[1], edge[2])
+                cycle_edges.remove((edge[0],edge[1]))
+            elif (edge[1],edge[0]) in cycle_edges:
+                cycle_edges_vector -= (edge[0], edge[1], edge[2])
+                cycle_edges.remove((edge[1],edge[0]))
+        
+
+        return cycle_edges_vector

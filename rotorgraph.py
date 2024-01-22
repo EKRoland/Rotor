@@ -7,6 +7,7 @@ import particleconfig
 from random import randint
 from results import Results
 import matrices
+from vector import Vector
 
 class RotorGraph(nx.MultiDiGraph):
 
@@ -294,6 +295,26 @@ class RotorGraph(nx.MultiDiGraph):
             res_config.configuration[node] = self.turn(rotor_config.configuration[node], k=k)
 
         return res_config
+    
+    ####
+    def linear_turn_vector(self, vector:Vector) -> Vector:
+        """
+        Turn lineary all non-zero edges in the vector 
+        Input:
+            - vector to turn
+        Output:
+            - new vector after the  linear turn
+        """
+        res_vector = Vector()
+        for edge,count in vector.items():
+            if edge not in self.edges:
+                raise ValueError(f"Invalid edge {edge}")
+        
+            if count != 0:
+                res_vector += self.turn(edge)
+                res_vector[self.turn(edge)] = count
+        return res_vector
+
 
     
     def reverse_turn(self, edge: Edge, k: int=1) -> Edge:
@@ -595,6 +616,149 @@ class RotorGraph(nx.MultiDiGraph):
                     matrix[u][v] = -self.number_of_edges(u, v)
 
         return matrices.Matrix(matrix)
+
+    ###
+    def remove_sink_out_edges(self, sinks: set=None) -> RotorGraph:
+        """
+        Create the graph without the sinks outgoing edges
+        Input:
+            - sinks: set of nodes that are considered as sinks (optional)
+        Output : 
+            - the rotorgraph without the sinks outgoing edges
+        """
+        
+        graph = deepcopy(self)
+        
+        if sinks == None:
+            sinks = self.sinks
+        
+        #Remove all outgoing edges of the sink vertices
+        for edge in self.edges:
+            if edge[0] in sinks:
+                graph.remove_edge(edge)     
+        
+        return graph    
+    
+    
+    def spanning_vector(self) -> Vector:
+        """
+        Create a spanning vector from a spanning tree of the graph
+        Input:
+            - sinks: set of nodes that are considered as sinks (optional)
+        Output : 
+            - a vector of edge of a spanning tree
+        """
+
+        # Converting to an undirected graph for the minimum spanning tree algorithm
+        undirected_graph = self.to_undirected()
+        # Calculating the minimum spanning tree 
+        undirected_mst = nx.minimum_spanning_tree(undirected_graph)
+
+        #The oriented spanning tree
+        directed_spanning_tree = RotorGraph()
+        for edge in undirected_mst.edges:
+            if self.has_edge(edge[0],edge[1]):
+                directed_spanning_tree.add_edge(edge[0],edge[1])
+            else:
+                directed_spanning_tree.add_edge(edge[1],edge[0])
+
+        #oriented spanning vector
+        spanning_vector = Vector()
+        for edge in directed_spanning_tree.edges:
+            spanning_vector += edge
+        
+        return spanning_vector       
+    
+
+    def cycle_basis(self) -> dict[Edge, Vector]:
+        """
+            Give a cycle basis for the graph
+            Input:
+                - sinks: set of nodes that are considered as sinks (optional)
+            Output : 
+                - list of Vector representating the elementary cycles
+        """
+        cycle_basis=dict()
+        spanning_vector = self.spanning_vector() 
+        spanning_vector_and_edge = Vector()
+        for edge in self.edges:
+            if edge not in spanning_vector.keys():
+                spanning_vector_and_edge =  spanning_vector + edge    
+                cycle_basis[edge] = spanning_vector_and_edge.find_cycle()
+        return cycle_basis   
+    
+   
+    def cycle_push_matrix_dict(self, sinks: set=None) -> dict[Edge, dict[Edge, int]]:
+        """
+            Create the cycle push matrix dictionary of the graph
+            Input:
+                - sinks: set of nodes that are considered as sinks (optional)
+            Output : 
+                - the cycle push matrix of the graph (dict of dict) 
+                    dict[Egde giving the cycle with the spanning tree, Vector(cyclepush - cycle)]
+        """
+
+        #remove sink outgoing edges
+        graph = self.remove_sink_out_edges(sinks)
+
+
+        cycle_basis = []
+        cycle_push_matrix_dict= dict()
+        cycle_basis = graph.cycle_basis()
+        for edge, cycle in cycle_basis.items():
+            cycle_push_matrix_dict[edge] = graph.linear_turn_vector(cycle) - cycle
+
+        return cycle_push_matrix_dict
+        
+    def cycle_push_matrix(self, sinks: set=None) -> dict[Edge, dict[Edge, int]]:
+        """
+            Create the cycle push matrix of the graph
+            Input:
+                - sinks: set of nodes that are considered as sinks (optional)
+            Output : 
+                - the cycle push matrix of the graph (dict of dict) 
+                    dict[Egde giving the cycle with the spanning tree, dict[All Edge, Coef in Cyclepush - cycle ]]
+        """
+        
+        
+        #shapping to create a Matrix object
+        cycle_push_matrix= dict()
+        cycle_push_matrix_dict= self.cycle_push_matrix_dict(sinks)
+
+        for u, vector in cycle_push_matrix_dict.items():
+            cycle_push_matrix[u] = dict()
+            for v in self.edges:
+                if v not in vector.keys():
+                    cycle_push_matrix[u][v] = 0
+                else:
+                    cycle_push_matrix[u][v] = vector[v]
+
+        return matrices.Matrix(cycle_push_matrix)
+    
+
+    def reduced_cycle_push_matrix(self, sinks: set=None) -> dict[Edge, dict[Edge, int]]:
+        """
+            Create the reduced cycle push matrix of the graph
+            Input:
+                - sinks: set of nodes that are considered as sinks (optional)
+            Output : 
+                - the cycle push matrix of the graph (dict of dict) 
+                    dict[Egde giving the cycle with the spanning tree, 
+                    dict[Egde giving the cycle with the spanning tree, Coef in Cyclepush - cycle ]]
+        """
+        #shapping to create a Matrix object
+        reduced_cycle_push_matrix= dict()
+        cycle_push_matrix_dict= self.cycle_push_matrix_dict(sinks)
+
+        for u, vector in cycle_push_matrix_dict.items():
+            reduced_cycle_push_matrix[u] = dict()
+            for v in cycle_push_matrix_dict.keys():
+                if v not in vector.keys():
+                    reduced_cycle_push_matrix[u][v] = 0
+                else:
+                    reduced_cycle_push_matrix[u][v] = vector[v]
+
+        return matrices.Matrix(reduced_cycle_push_matrix)
 
 
 
