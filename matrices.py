@@ -1,4 +1,5 @@
 from smithnormalform import matrix, snfproblem, z
+import numpy as np
 
 class Matrix(matrix.Matrix):
     
@@ -13,14 +14,16 @@ class Matrix(matrix.Matrix):
             - obj: a dict of dicts
         No output
         """
-        if not isinstance(obj, dict):
-            raise TypeError("obj has to be a dict")
-        
-        self.dictionnary = obj
-        n = len(obj)
-        m = len(next(iter(obj.values())))
-        values = [z.Z(v) for line in obj.values() for v in line.values()]
-        matrix.Matrix.__init__(self, n, m, values)
+        if isinstance(obj, dict):
+            self.dictionnary = obj
+            n = len(obj)
+            m = len(next(iter(obj.values())))
+            values = [z.Z(v) for line in obj.values() for v in line.values()]
+            matrix.Matrix.__init__(self, n, m, values)
+        elif type(obj).__name__ == "Matrix":
+            matrix.Matrix.__init__(self, obj.h, obj.w, obj.elements)
+        else:
+            raise TypeError("obj has to be a dict or a Matrix")
 
     def snf_problem(self) -> snfproblem.SNFProblem:
         """
@@ -39,11 +42,12 @@ class Matrix(matrix.Matrix):
         prob = snfproblem.SNFProblem(self)
         prob.computeSNF()
         
+        
         for i in range(min(self.h, self.w)):
             if prob.J.get(i,i).a < 0:
                 prob.J.set(i,i, prob.J.get(i,i)*z.Z(-1))
-                for j in range(self.w):
-                    prob.S.set(i,j,prob.S.get(i,j)*z.Z(-1))
+                for j in range(self.h):
+                    prob.S.set(i,j, prob.S.get(i,j)*z.Z(-1))
         
         if not prob.isValid:
             raise ValueError("Problem is not valid")
@@ -52,6 +56,22 @@ class Matrix(matrix.Matrix):
             raise ValueError("J != S*A*T")
         
         return prob
+    
+    def to_numpy(self) -> np.ndarray:
 
+        """
+        Convert Matrix to numpy array
+        Input:
+            - Matrix 
+        Output:
+            - Numpy matrix
+        """
+        Matrice=[]
+        for i in range(self.h):
+            Matrice.append([])
+            for j in range (self.w):
+                Matrice[i].append(self.get(i,j).a)  
+
+        return  np.array(Matrice)
             
 

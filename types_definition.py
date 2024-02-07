@@ -5,4 +5,5 @@ ParticleConfig = object
 RotorConfig = object
 RotorGraph = object
 Vector = object
+ArcSum = object
 

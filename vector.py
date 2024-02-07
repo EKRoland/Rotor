@@ -20,9 +20,8 @@ class Vector:
         elif configuration is None:
             self.configuration = dict()
         else:
-            raise TypeError("configuration has to be a dict, RotorGraph or nothing")
+            raise TypeError("configuration has to be a dict, RotorConfig or nothing")
         
-    ##raise TypeError("configuration has to be a dict, Rotorconfig or nothing")??
 
     def __str__(self):
         """dictionnary method"""
@@ -391,13 +390,15 @@ class Vector:
         """dictionnary method"""
         return len(self.configuration)
     
+
+    '''
     def find_cycle(self)-> Vector:
         """
         Find cycles in a sum of arcs 
         Input:
             - self: vector which is a sum of arc (edge: int)
         Output:
-            - Vector of edges which form an undirected cycle
+            - Vector of edges which form a directed cycle
 
         """
 
@@ -408,12 +409,15 @@ class Vector:
                 G.add_edge(edge[0], edge[1])
         #list of cycles
         cycles = list(nx.simple_cycles(G))
+        
+        #Return None when no cycle detected
+        if not cycles:
+            return None
 
         #list of edges in the first cycle
         cycle = cycles[0]
-        cycle_edges = []
-        cycle_edges.extend([(cycle[i], cycle[i+1]) for i in range(len(cycle)-1)])
-        cycle_edges.append((cycle[-1], cycle[0]))  # Add of the last arc of the cycle
+        cycle_edges = list([(cycle[i], cycle[i+1]) for i in range(-1,len(cycle)-1)])
+        #cycle_edges.append((cycle[-1], cycle[0]))  # Add of the last arc of the cycle
         
 
         #give the edges of the vector which form the cycle with thier orientation
@@ -428,3 +432,4 @@ class Vector:
         
 
         return cycle_edges_vector
+    '''

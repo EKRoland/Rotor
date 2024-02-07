@@ -59,7 +59,8 @@ print(G.edges)
 cycles = list(nx.simple_cycles(G))
 
 print(cycles)
-"""
+
+
 
 import numpy as np
 
@@ -70,3 +71,36 @@ matrix = np.array([[2, -1, 0, 0], [1, 1, -1, 0], [1, 0, -2, 1], [1, 0, -1, -1]])
 determinant = np.linalg.det(matrix)
 
 print("Déterminant de la matrice :", determinant)
+
+"""
+import numpy as np
+
+# Créez une matrice
+matrice = np.array([[1, 23, 456],
+                    [78, 9, 1011],
+                    [12, 1314, 15]])
+
+# Affichez la matrice avec indentation et alignement
+#np.set_printoptions(formatter={'int': lambda x: f"{x:5}"})
+print(matrice)
+
+matrice1 = np.array([[1,23, 456],
+                    [78, -5, 11],
+                    [12, 14, 15]])
+print(matrice1)
+
+
+from sympy import Matrix
+import numpy as np
+
+# Créez une matrice SymPy
+M_sympy = Matrix([[1, 2, 3],
+                  [4, 5, 6],
+                  [7, 8, 9]])
+
+# Convertissez la matrice SymPy en une matrice NumPy
+M_numpy = np.array(M_sympy)
+
+# Affichez la matrice NumPy
+print(type(M_numpy))
+print(M_numpy[:,1])

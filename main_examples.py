@@ -5,7 +5,9 @@ from rotorconfig import RotorConfig
 from rotorgraph import RotorGraph, display_path, all_config_from_recurrent, display_grid
 from particleconfig import ParticleConfig
 from matrices import Matrix
-
+from arcsum import ArcSum
+import numpy as np
+from smithnormalform import matrix, snfproblem, z
 
 
 
@@ -214,26 +216,122 @@ if __name__ == "__main__":
 
 
     G=graph
-    #G = RotorGraph.simple_path(n=7, x=2, y=2)
+    G = RotorGraph.simple_path(n=3, x=2, y=2)
     #G=RotorGraph.grid(3, 3, "center")
     #G=RotorGraph.random_graph(5,5)
+
+
+    L = G.laplacian_matrix()
     
-    span=G.spanning_vector() 
-    print(span)
-
+    rL = G.reduced_laplacian_matrix()
     
-
-    base= G.cycle_basis()
-    print(base)
-    print(len(base))
-    print(len(span))
-
-    cpm= G.cycle_push_matrix({})
-    rcpm= G.reduced_cycle_push_matrix()
-    print(cpm)
-    print(rcpm)
+    
 
     
+    
+
+    """
+    # compute the snf problem for the Lapacian 
+    print("Laplacian matrix\n",L)
+    prob = L.snf_problem()
+    
+
+    # J is the diagonalized matrix
+    print(prob.J)
+
+    # S and T are complementary unimodular matrices
+    #print(prob.S)
+    print(prob.T)
+    """
+    
+    #print(G.cycle_push_matrix_dict())
+    #print(len(G.cycle_push_matrix_dict())) 
+
+    #print(len(G.cycle_push_matrix_dict().items()))
+
+    # compute the snf problem for cycle  push matrix
+    cpm= G.cycle_push_matrix()
+    #rcpm= G.reduced_cycle_push_matrix()
+    #print("cycle push matrix\n",cpm)
+
+    prob = cpm.snf_problem()
+    
+    # J is the diagonalized matrix
+
+    MatrixT = Matrix(prob.T)
+    MatrixT = MatrixT.to_numpy()
+
+    MatrixJ = Matrix(prob.J)
+    MatrixJ = MatrixJ.to_numpy()
+    
+    list_edges= list(G.edges)
+    arcmonic_functions = []
+    for j in range(MatrixJ.shape[1]):
+        arcmonic_dict = dict()
+        order = sum(MatrixJ[:,j])
+        if  order != 1:
+            arcmonic_dict["order"] = order
+            for i in range(MatrixT.shape[0]):
+                arcmonic_dict[list_edges[i]] = MatrixT[i][j] 
+            arcmonic_functions.append(arcmonic_dict)
+
+    
+    print(MatrixJ)
+    print(MatrixT)
+
+    arcmonic_functions = G.arcmonic_functions() 
+
+    for element in arcmonic_functions:
+        print(element)
+    
+    
+    sum1= ArcSum({(1, 2, 0):1, (2, 1, 0):1, (3, 4, 0):1})
+
+    
+
+    print(G.compute_arcmonic_functions(arcmonic_functions, sum1))
+    
+    
+    print(sum1.rotoconfig_in_class(G))
+
+    #print([Vector(element) for element in G.enum_acyclic_configurations()])
+    
+    
+    
+    
+    
+    
+    """
+    MatriceT=[]
+
+    for i in range( prob.T.h):
+        MatriceT.append([])
+        for j in range (prob.T.w):
+            MatriceT[i].append(prob.T.get(i,j).a)  
+    
+
+    MatriceT= np.array(MatriceT)
+    print(type(prob.T))
+    print(MatriceT[:,1])
+    print(type(MatriceT))
+    """
+    
+    
+    #print(G.rotor_order)
+    #print(G.edges)
+    
+    
+    '''
+    #rotor config checking
+    print(G.enum_acyclic_configurations())
+
+    sum1= ArcSum({(1, 0, 0):1, (3, 1, 0):1})
+
+    rho= RotorConfig(sum1.is_rotorconfig_of(G))
+    print(rho)
+    '''
+
+
 
     #span= {(1, 0, 1): 1, (1, 2, 0): 1, (2, 3, 0): 1, (3, 4, 1): 0, (4, 5, 0): 1, (5, 6, 0): -2, (6, 7, 0): 1, (7, 8, 0): 1}
     #allpush = G.linear_turn_vector(span) 

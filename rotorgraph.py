@@ -7,7 +7,9 @@ import particleconfig
 from random import randint
 from results import Results
 import matrices
+from matrices import Matrix
 from vector import Vector
+from arcsum import ArcSum
 
 class RotorGraph(nx.MultiDiGraph):
 
@@ -297,7 +299,7 @@ class RotorGraph(nx.MultiDiGraph):
         return res_config
     
     ####
-    def linear_turn_vector(self, vector:Vector) -> Vector:
+    def linear_turn_vector(self, vector:ArcSum) -> ArcSum:
         """
         Turn lineary all non-zero edges in the vector 
         Input:
@@ -305,14 +307,14 @@ class RotorGraph(nx.MultiDiGraph):
         Output:
             - new vector after the  linear turn
         """
-        res_vector = Vector()
+        res_vector = ArcSum()
         for edge,count in vector.items():
             if edge not in self.edges:
                 raise ValueError(f"Invalid edge {edge}")
         
             if count != 0:
                 res_vector += self.turn(edge)
-                res_vector[self.turn(edge)] = count
+                res_vector[self.turn(edge)] = count #give the signe of the vector
         return res_vector
 
 
@@ -640,13 +642,13 @@ class RotorGraph(nx.MultiDiGraph):
         return graph    
     
     
-    def spanning_vector(self) -> Vector:
+    def spanning_vector(self) -> ArcSum:
         """
         Create a spanning vector from a spanning tree of the graph
         Input:
             - sinks: set of nodes that are considered as sinks (optional)
         Output : 
-            - a vector of edge of a spanning tree
+            -  sum of edge forming a spanning tree
         """
 
         # Converting to an undirected graph for the minimum spanning tree algorithm
@@ -655,6 +657,8 @@ class RotorGraph(nx.MultiDiGraph):
         undirected_mst = nx.minimum_spanning_tree(undirected_graph)
 
         #The oriented spanning tree
+
+        #We just take the first edge 0
         directed_spanning_tree = RotorGraph()
         for edge in undirected_mst.edges:
             if self.has_edge(edge[0],edge[1]):
@@ -663,24 +667,25 @@ class RotorGraph(nx.MultiDiGraph):
                 directed_spanning_tree.add_edge(edge[1],edge[0])
 
         #oriented spanning vector
-        spanning_vector = Vector()
+        spanning_vector = ArcSum()
         for edge in directed_spanning_tree.edges:
             spanning_vector += edge
         
         return spanning_vector       
-    
+     
 
-    def cycle_basis(self) -> dict[Edge, Vector]:
+    def cycle_basis(self) -> dict[Edge, ArcSum]:
         """
             Give a cycle basis for the graph
             Input:
                 - sinks: set of nodes that are considered as sinks (optional)
             Output : 
-                - list of Vector representating the elementary cycles
+                - dict of ArcSum representating the elementary cycles
         """
         cycle_basis=dict()
         spanning_vector = self.spanning_vector() 
-        spanning_vector_and_edge = Vector()
+        spanning_vector_and_edge = ArcSum()
+        
         for edge in self.edges:
             if edge not in spanning_vector.keys():
                 spanning_vector_and_edge =  spanning_vector + edge    
@@ -688,7 +693,7 @@ class RotorGraph(nx.MultiDiGraph):
         return cycle_basis   
     
    
-    def cycle_push_matrix_dict(self, sinks: set=None) -> dict[Edge, dict[Edge, int]]:
+    def cycle_push_matrix_dict(self) -> dict[Edge, dict[Edge, int]]:
         """
             Create the cycle push matrix dictionary of the graph
             Input:
@@ -697,20 +702,16 @@ class RotorGraph(nx.MultiDiGraph):
                 - the cycle push matrix of the graph (dict of dict) 
                     dict[Egde giving the cycle with the spanning tree, Vector(cyclepush - cycle)]
         """
-
-        #remove sink outgoing edges
-        graph = self.remove_sink_out_edges(sinks)
-
-
         cycle_basis = []
         cycle_push_matrix_dict= dict()
-        cycle_basis = graph.cycle_basis()
+
+        cycle_basis = self.cycle_basis()
         for edge, cycle in cycle_basis.items():
-            cycle_push_matrix_dict[edge] = graph.linear_turn_vector(cycle) - cycle
+            cycle_push_matrix_dict[edge] = self.linear_turn_vector(cycle) - cycle
 
         return cycle_push_matrix_dict
         
-    def cycle_push_matrix(self, sinks: set=None) -> dict[Edge, dict[Edge, int]]:
+    def cycle_push_matrix(self) -> dict[Edge, dict[Edge, int]]:
         """
             Create the cycle push matrix of the graph
             Input:
@@ -720,10 +721,9 @@ class RotorGraph(nx.MultiDiGraph):
                     dict[Egde giving the cycle with the spanning tree, dict[All Edge, Coef in Cyclepush - cycle ]]
         """
         
-        
         #shapping to create a Matrix object
         cycle_push_matrix= dict()
-        cycle_push_matrix_dict= self.cycle_push_matrix_dict(sinks)
+        cycle_push_matrix_dict= self.cycle_push_matrix_dict()
 
         for u, vector in cycle_push_matrix_dict.items():
             cycle_push_matrix[u] = dict()
@@ -736,7 +736,7 @@ class RotorGraph(nx.MultiDiGraph):
         return matrices.Matrix(cycle_push_matrix)
     
 
-    def reduced_cycle_push_matrix(self, sinks: set=None) -> dict[Edge, dict[Edge, int]]:
+    def reduced_cycle_push_matrix(self) -> dict[Edge, dict[Edge, int]]:
         """
             Create the reduced cycle push matrix of the graph
             Input:
@@ -748,7 +748,7 @@ class RotorGraph(nx.MultiDiGraph):
         """
         #shapping to create a Matrix object
         reduced_cycle_push_matrix= dict()
-        cycle_push_matrix_dict= self.cycle_push_matrix_dict(sinks)
+        cycle_push_matrix_dict= self.cycle_push_matrix_dict()
 
         for u, vector in cycle_push_matrix_dict.items():
             reduced_cycle_push_matrix[u] = dict()
@@ -791,6 +791,69 @@ class RotorGraph(nx.MultiDiGraph):
                 self.step(particle_config, rotor_config, node=u, sinks=sinks, turn_and_move=turn_and_move)
 
         return particle_config, rotor_config
+    
+    def arcmonic_functions(self)-> list[dict]:
+        """
+        Gives a list of all arcmonic function on the arcs of the graph, with order 
+        Input:
+            - No input
+        Output:
+            - list of arcmonic function list(order: int, edges:int)
+        
+        """
+        #cycle push matrix and it's SNF problem
+        cpm= self.cycle_push_matrix()
+        prob = cpm.snf_problem()
+        
+        #Convert the diagonalized matrix J and the projection matrix T as elment of Matrix class
+        MatrixT = Matrix(prob.T)
+        MatrixT = MatrixT.to_numpy()
+
+        MatrixJ = Matrix(prob.J)
+        MatrixJ = MatrixJ.to_numpy()
+        
+        #arcmonic functions
+        list_edges= list(self.edges)
+        arcmonic_functions = []
+
+        for j in range(MatrixJ.shape[1]):
+            arcmonic_dict = dict()
+            order = sum(MatrixJ[:,j])
+            if  order != 1:
+                arcmonic_dict["order"] = order
+                for i in range(MatrixT.shape[0]):
+                    arcmonic_dict[list_edges[i]] = MatrixT[i][j] 
+                arcmonic_functions.append(arcmonic_dict)
+
+        return arcmonic_functions
+    
+    def compute_arcmonic_functions(self, arcmonic_functions:list[dict], sum_of_arcs:ArcSum)-> list[tuple]:
+        """
+        Gives a list of all arcmonic function on the arcs of the graph, with order 
+        Input:
+            - Sum_of_arcs which armonic value will be computer for each 
+        Output:
+            - list of tuple = (order:int, armonic value:int)
+        """
+
+        arcmonic_values = []
+        for arcmonic_function in arcmonic_functions:
+            order = arcmonic_function["order"]
+            arcmonic_value = 0
+
+            for  edge, count in sum_of_arcs.items():
+                if edge not in self.edges:
+                    raise ValueError(f"Invalid edge {edge} for this graph")
+                else:
+                    arcmonic_value += count * arcmonic_function[edge]
+
+            if order != 0:
+                arcmonic_value = arcmonic_value % order
+
+            arcmonic_values.append((order,arcmonic_value))
+        
+        return arcmonic_values
+
 
     def enum_configurations(self, sinks:set=None) -> list[RotorConfig]: 
         """
@@ -917,6 +980,7 @@ class RotorGraph(nx.MultiDiGraph):
             rec_acyclic.append((rec, acy))
 
         return rec_acyclic
+    
 
 
 def all_config_from_recurrent(rotor_graph: RotorGraph, rotor_config: RotorConfig, sinks:set=None,
