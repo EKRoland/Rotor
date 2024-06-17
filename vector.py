@@ -389,47 +389,8 @@ class Vector:
     def __len__(self) -> int:
         """dictionnary method"""
         return len(self.configuration)
-    
-
-    '''
-    def find_cycle(self)-> Vector:
-        """
-        Find cycles in a sum of arcs 
-        Input:
-            - self: vector which is a sum of arc (edge: int)
-        Output:
-            - Vector of edges which form a directed cycle
-
-        """
-
-        #Creation of a multigraph assiociated to the vector
-        G = nx.MultiGraph()
-        for edge, count in self.configuration.items():
-            if count != 0:
-                G.add_edge(edge[0], edge[1])
-        #list of cycles
-        cycles = list(nx.simple_cycles(G))
-        
-        #Return None when no cycle detected
-        if not cycles:
-            return None
-
-        #list of edges in the first cycle
-        cycle = cycles[0]
-        cycle_edges = list([(cycle[i], cycle[i+1]) for i in range(-1,len(cycle)-1)])
-        #cycle_edges.append((cycle[-1], cycle[0]))  # Add of the last arc of the cycle
-        
-
-        #give the edges of the vector which form the cycle with thier orientation
-        cycle_edges_vector = Vector()
-        for edge, count in self.configuration.items():
-            if (edge[0],edge[1]) in cycle_edges:
-                cycle_edges_vector += (edge[0], edge[1], edge[2])
-                cycle_edges.remove((edge[0],edge[1]))
-            elif (edge[1],edge[0]) in cycle_edges:
-                cycle_edges_vector -= (edge[0], edge[1], edge[2])
-                cycle_edges.remove((edge[1],edge[0]))
-        
-
-        return cycle_edges_vector
-    '''
+    """
+    def to_dict_node(self) -> dict():
+        dico= {edge[0]: edge for edge, value in self.configuration.items() if value}
+        return dico
+    """

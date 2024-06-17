@@ -6,4 +6,5 @@ RotorConfig = object
 RotorGraph = object
 Vector = object
 ArcSum = object
+Arcmonic = object
 

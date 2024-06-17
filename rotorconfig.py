@@ -2,6 +2,7 @@ from types_definition import *
 import rotorgraph
 
 
+
 class RotorConfig(object):
 
     def __init__(self, configuration: dict or RotorGraph=None):
@@ -23,10 +24,12 @@ class RotorConfig(object):
             self.configuration = {node: edges[0] for node, edges in configuration.rotor_order.items()}
         elif type(configuration).__name__ == "Vector":
             self.configuration = {edge[0]: edge for edge, value in configuration.items() if value}
+        elif type(configuration).__name__ == "ArcSum":
+            self.configuration = {edge[0]: edge for edge, value in configuration.items() if value}
         elif configuration is None:
             self.configuration = dict()
         else:
-            raise TypeError("configuration has to be a dict, RotorGraph, Vector or nothing")
+            raise TypeError("configuration has to be a dict, RotorGraph, Vector, ArcSum or nothing")
 
     def __str__(self):
         """dictionnary method"""
@@ -147,5 +150,8 @@ class RotorConfig(object):
         while cycles := self.find_cycles(sinks):
             for cycle in cycles:
                 self.cycle_push(rotor_graph, cycle)
+        
+
+
 
 

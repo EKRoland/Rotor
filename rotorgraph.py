@@ -4,12 +4,15 @@ from unionfind import UnionFind
 from copy import deepcopy
 import rotorconfig
 import particleconfig
+from particleconfig import ParticleConfig
+from rotorconfig import RotorConfig
 from random import randint
 from results import Results
 import matrices
 from matrices import Matrix
 from vector import Vector
 from arcsum import ArcSum
+from arcmonic import Arcmonic
 
 class RotorGraph(nx.MultiDiGraph):
 
@@ -110,6 +113,74 @@ class RotorGraph(nx.MultiDiGraph):
         
 
         return G
+    
+
+
+
+    def complete_graph(n:int=4)-> RotorGraph:
+        """
+        Create a complete rotor graph with n nodes
+        Input:
+            - n: number of nodes 
+        Output:
+            - a complete rotor graph with n nodes
+        """
+        graph = RotorGraph()
+        #Nodes
+        for i in range(n): graph.add_node(i)
+        '''
+        #Edges in order v(i+1)---v(n-1) v(0)---v(i-1)
+        for i in range(n):
+            for j in range(i+1, i+n):
+                graph.add_edge(i, j%n)
+        '''
+        #Edges in order(v(0)----v(n-1))
+        for i in range(n):
+            for j in range(n):
+                if i!=j:
+                    graph.add_edge(i,j)
+        
+        return graph
+
+
+    def complete_graph_with_sink(n:int=4, sinks: set=None)-> RotorGraph:
+        """
+        Create a complete rotor graph with n nodes, with sink the last node
+        Input:
+            - n: number of nodes 
+        Output:
+            - a complete rotor graph with n nodes, 
+        """
+        graph = RotorGraph()
+        #Nodes
+        for i in range(n): graph.add_node(i)
+
+        '''
+        #Edges in order v(i+1)---v(n-1) v(0)---v(i-1)
+        for i in range(n):
+            for j in range(i+1, i+n):
+                graph.add_edge(i, j%n)
+        '''
+
+        #Edges in order(v(0)----v(n-1))
+        for i in range(n):
+            for j in range(n):
+                if i!=j:
+                    graph.add_edge(i,j)
+
+        #Set the last edges as sink per default  
+        if sinks == None:
+            graph.set_sink(n-1)
+        else :
+            for sink in sinks:
+                graph.set_sink(sink)
+
+        return graph
+    
+
+
+
+
 
 
     def add_edge(self, u_for_edge: Node, v_for_edge: Node, key=None, **attr) -> object:
@@ -458,12 +529,12 @@ class RotorGraph(nx.MultiDiGraph):
             particle_config.transfer_particles(succ, node)
 
             # turn
-            rotor_config.configuration[node] = self.turn(edge)
+            rotor_config.configuration[node] = self.reverse_turn(edge)
 
         else: # move and turn
             # turn
             edge = rotor_config.configuration[node]
-            edge = self.turn(edge)
+            edge = self.reverse_turn(edge)
             rotor_config.configuration[node] = edge
 
             # move
@@ -619,7 +690,7 @@ class RotorGraph(nx.MultiDiGraph):
 
         return matrices.Matrix(matrix)
 
-    ###
+    ### 
     def remove_sink_out_edges(self, sinks: set=None) -> RotorGraph:
         """
         Create the graph without the sinks outgoing edges
@@ -637,7 +708,14 @@ class RotorGraph(nx.MultiDiGraph):
         #Remove all outgoing edges of the sink vertices
         for edge in self.edges:
             if edge[0] in sinks:
-                graph.remove_edge(edge)     
+                graph.remove_edge(edge)
+        
+        ###XXXXX Verifier si pas de conflit
+        #Remove rotor on the sinks vertices
+        for node in sinks:
+            del graph.rotor_order[node]
+        
+    
         
         return graph    
     
@@ -671,7 +749,34 @@ class RotorGraph(nx.MultiDiGraph):
         for edge in directed_spanning_tree.edges:
             spanning_vector += edge
         
-        return spanning_vector       
+        return spanning_vector 
+
+
+
+    ###############"
+    ###################XXXXXXXXXXXx"
+    #Function that gives direct cycle in a graph
+    def find_directed_cycles(self):
+        cycles = []
+
+        for node in self.nodes():
+            visited = set()
+            stack = [(node, [node])]
+
+            while stack:
+                current, path = stack.pop()
+                if current in visited:
+                    if current == path[0] and len(path) > 1:
+                        # Found a directed cycle
+                        cycles.append(path)
+                    continue
+
+                visited.add(current)
+
+                for successor in self.successors(current):
+                    stack.append((successor, path + [successor]))
+
+        return cycles      
      
 
     def cycle_basis(self) -> dict[Edge, ArcSum]:
@@ -792,13 +897,14 @@ class RotorGraph(nx.MultiDiGraph):
 
         return particle_config, rotor_config
     
-    def arcmonic_functions(self)-> list[dict]:
+
+    def arcmonic_functions(self)-> list[Arcmonic]:
         """
-        Gives a list of all arcmonic function on the arcs of the graph, with order 
+        Gives a list of all arcmonic function of the graph
         Input:
             - No input
         Output:
-            - list of arcmonic function list(order: int, edges:int)
+            - list of arcmonic function list(order: int, arcmonic_values: Vector[edges:int])
         
         """
         #cycle push matrix and it's SNF problem
@@ -820,41 +926,13 @@ class RotorGraph(nx.MultiDiGraph):
             arcmonic_dict = dict()
             order = sum(MatrixJ[:,j])
             if  order != 1:
-                arcmonic_dict["order"] = order
                 for i in range(MatrixT.shape[0]):
                     arcmonic_dict[list_edges[i]] = MatrixT[i][j] 
-                arcmonic_functions.append(arcmonic_dict)
+                arcmonic_functions.append(  Arcmonic( (order, Vector(arcmonic_dict)) )  )
 
         return arcmonic_functions
     
-    def compute_arcmonic_functions(self, arcmonic_functions:list[dict], sum_of_arcs:ArcSum)-> list[tuple]:
-        """
-        Gives a list of all arcmonic function on the arcs of the graph, with order 
-        Input:
-            - Sum_of_arcs which armonic value will be computer for each 
-        Output:
-            - list of tuple = (order:int, armonic value:int)
-        """
-
-        arcmonic_values = []
-        for arcmonic_function in arcmonic_functions:
-            order = arcmonic_function["order"]
-            arcmonic_value = 0
-
-            for  edge, count in sum_of_arcs.items():
-                if edge not in self.edges:
-                    raise ValueError(f"Invalid edge {edge} for this graph")
-                else:
-                    arcmonic_value += count * arcmonic_function[edge]
-
-            if order != 0:
-                arcmonic_value = arcmonic_value % order
-
-            arcmonic_values.append((order,arcmonic_value))
-        
-        return arcmonic_values
-
-
+    
     def enum_configurations(self, sinks:set=None) -> list[RotorConfig]: 
         """
         Gives a list of all the rotor configuration of the graph

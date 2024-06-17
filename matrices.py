@@ -66,7 +66,7 @@ class Matrix(matrix.Matrix):
         Output:
             - Numpy matrix
         """
-        Matrice=[]
+        Matrice = []
         for i in range(self.h):
             Matrice.append([])
             for j in range (self.w):
